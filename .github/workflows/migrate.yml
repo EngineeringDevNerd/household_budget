@@ -1,0 +1,42 @@
+name: Migrate database
+
+# Manual only: Actions tab -> "Migrate database" -> Run workflow.
+# Leave "Dry run" ticked first to see which migrations would be applied,
+# then run again with it unticked to apply them.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run (only list what would be applied)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Push migrations
+        env:
+          # Session pooler connection string, stored as a repository secret.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::The SUPABASE_DB_URL repository secret is not set."
+            exit 1
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            supabase db push --remote="$SUPABASE_DB_URL" --dry-run
+          else
+            supabase db push --remote="$SUPABASE_DB_URL" --yes
+          fi
