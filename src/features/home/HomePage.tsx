@@ -1,15 +1,15 @@
-import { isSupabaseConfigured } from '../../lib/supabase'
+import { useAuth } from '../auth/authContext'
 
-// Placeholder until the bills board lands. It proves the deploy works and
-// that the build picked up the Supabase settings.
+// Placeholder until the bills board lands.
 export function HomePage() {
+  const { displayName, signOut } = useAuth()
   return (
     <main className="page">
-      <h1>Household Budget</h1>
-      <p>The app skeleton is live. Bills and paychecks are coming next.</p>
-      <p className={isSupabaseConfigured ? 'ok' : 'warn'}>
-        Supabase settings: {isSupabaseConfigured ? 'found' : 'missing (check the GitHub repository variables)'}
-      </p>
+      <header className="topbar">
+        <h1>Household Budget</h1>
+        <button className="link" onClick={signOut}>Sign out</button>
+      </header>
+      <p>Hi {displayName}. You’re signed in. Bills and paychecks are coming next.</p>
     </main>
   )
 }
