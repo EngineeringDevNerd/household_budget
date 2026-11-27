@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { addDays, daysBetween, formatMonth, formatMonthDay, formatShortDate, monthStart } from '../../lib/dates'
 import { formatCents } from '../../lib/money'
-import { useAuth } from '../auth/authContext'
+import { TopBar } from '../../components/TopBar'
 import { MarkPaidDialog } from './MarkPaidDialog'
 import { UnmarkDialog } from './UnmarkDialog'
 import { useBoard, type Bill } from './useBoard'
@@ -9,19 +9,11 @@ import { useBoard, type Bill } from './useBoard'
 const sum = (bills: Bill[]) => bills.reduce((t, b) => t + b.amount_cents, 0)
 
 export function BillsBoard() {
-  const { displayName, signOut } = useAuth()
   const { data, error, reload } = useBoard()
   const [paying, setPaying] = useState<Bill | null>(null)
   const [unpaying, setUnpaying] = useState<Bill | null>(null)
 
-  const header = (
-    <header className="topbar">
-      <h1>Bills</h1>
-      <button className="link" onClick={signOut} title={displayName ? `Signed in as ${displayName}` : undefined}>
-        Sign out
-      </button>
-    </header>
-  )
+  const header = <TopBar title="Bills" />
 
   if (error) {
     return (
@@ -55,7 +47,10 @@ export function BillsBoard() {
   const daysToPayday = nextPayday ? daysBetween(today, nextPayday) : null
 
   const thisMonth = monthStart(today)
-  const monthBills = bills.filter((b) => b.bill_month === thisMonth)
+  // Credit card payments are transfers: the bills charged to the card are
+  // already counted, so counting the card payment too would double it.
+  const transferCats = new Set(data.categories.filter((c) => c.kind === 'transfer').map((c) => c.id))
+  const monthBills = bills.filter((b) => b.bill_month === thisMonth && !transferCats.has(b.category_id ?? ''))
   const monthPaid = monthBills.filter((b) => b.status === 'paid')
   const monthTotal = sum(monthBills)
   const paidPct = monthTotal ? Math.round((sum(monthPaid) / monthTotal) * 100) : 0

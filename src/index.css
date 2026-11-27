@@ -104,3 +104,14 @@ select { font: inherit; font-size: 16px; padding: 12px; border-radius: 8px; bord
 button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--border); }
 button.danger { background: var(--danger); }
 @media (prefers-color-scheme: dark) { button.danger { color: #10172e; } }
+
+/* ---------- Top nav + paychecks ---------- */
+.nav { display: flex; align-items: center; gap: 16px; }
+.nav a { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 0; }
+.nav a.active { color: var(--accent); }
+.topbar h1 { font-size: 1.4rem; margin: 0; }
+select.move { padding: 6px 8px; font-size: 16px; max-width: 92px; }
+.check-totals { display: flex; justify-content: space-between; gap: 8px; padding: 8px 4px 0; font-weight: 600; }
+.pool-form { margin-top: 12px; }
+.pool-form .row-buttons label { flex: 1; min-width: 0; }
+.pool-form input { width: 100%; }
