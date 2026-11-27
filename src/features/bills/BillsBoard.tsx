@@ -4,6 +4,8 @@ import { formatCents } from '../../lib/money'
 import { TopBar } from '../../components/TopBar'
 import { ProgressRing } from '../../components/ProgressRing'
 import { CategoryDot, CategoryTag } from '../../components/CategoryDot'
+import { SwipeToPay } from '../../components/SwipeToPay'
+import { confetti } from '../../lib/confetti'
 import { Toast, type ToastState } from '../../components/Toast'
 import { useCountUp } from '../../lib/useCountUp'
 import { supabase } from '../../lib/supabase'
@@ -77,7 +79,14 @@ export function BillsBoard() {
   const paid = (bill: Bill) => {
     setPaying(null)
     setJustPaid(bill.id)
-    setToast({ id: ++toastId.current, message: `${bill.name} marked paid`, actionLabel: 'Undo', onAction: () => undo(bill) })
+    // Celebrate when this was the last unpaid bill on its paycheck.
+    const checkDone =
+      bill.paycheck_id && bill.paycheck && !bills.some((b) => b.id !== bill.id && b.paycheck_id === bill.paycheck_id && b.status === 'due')
+    const message = checkDone
+      ? `${bill.name} paid. That's every bill on the ${formatMonthDay(bill.paycheck!.pay_date)} check!`
+      : `${bill.name} marked paid`
+    if (checkDone) setTimeout(confetti, 350)
+    setToast({ id: ++toastId.current, message, actionLabel: 'Undo', onAction: () => undo(bill) })
     setTimeout(async () => {
       await reload()
       setJustPaid(null)
@@ -210,37 +219,39 @@ type RowProps = {
 function BillRow({ bill, onCheck, onEdit, leaving, categoryName }: RowProps) {
   const paid = bill.status === 'paid' || leaving
   return (
-    <li className={['bill', paid && 'paid', leaving && 'leaving'].filter(Boolean).join(' ')}>
-      <button
-        className={['check', paid && 'checked', leaving && 'just-checked'].filter(Boolean).join(' ')}
-        onClick={() => onCheck(bill)}
-        disabled={leaving}
-        aria-label={paid ? `Mark ${bill.name} as not paid` : `Mark ${bill.name} paid`}
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3.5 8.5l3 3 6-7" />
-        </svg>
-      </button>
-      {/* Tapping anywhere but the check opens the edit popup. */}
-      <button className="txn-open" onClick={() => onEdit(bill)} aria-label={`Edit ${bill.name}`}>
-        <span className="bill-main">
-          <span className="bill-name">
-            <CategoryDot id={bill.category_id} />
-            {bill.name}
+    <li className={['bill', 'swipeable', paid && 'paid', leaving && 'leaving'].filter(Boolean).join(' ')}>
+      <SwipeToPay enabled={!paid} label="Pay" onSwipe={() => onCheck(bill)}>
+        <button
+          className={['check', paid && 'checked', leaving && 'just-checked'].filter(Boolean).join(' ')}
+          onClick={() => onCheck(bill)}
+          disabled={leaving}
+          aria-label={paid ? `Mark ${bill.name} as not paid` : `Mark ${bill.name} paid`}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 8.5l3 3 6-7" />
+          </svg>
+        </button>
+        {/* Tapping anywhere but the check opens the edit popup. */}
+        <button className="txn-open" onClick={() => onEdit(bill)} aria-label={`Edit ${bill.name}`}>
+          <span className="bill-main">
+            <span className="bill-name">
+              <CategoryDot id={bill.category_id} />
+              {bill.name}
+            </span>
+            <span className="muted small">
+              {paid && bill.paid_date ? `Paid ${formatShortDate(bill.paid_date)}` : `Due ${formatShortDate(bill.due_date)}`}
+              {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
+              {categoryName && (
+                <>
+                  {' '}
+                  <CategoryTag id={bill.category_id} name={categoryName} />
+                </>
+              )}
+            </span>
           </span>
-          <span className="muted small">
-            {paid && bill.paid_date ? `Paid ${formatShortDate(bill.paid_date)}` : `Due ${formatShortDate(bill.due_date)}`}
-            {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
-            {categoryName && (
-              <>
-                {' '}
-                <CategoryTag id={bill.category_id} name={categoryName} />
-              </>
-            )}
-          </span>
-        </span>
-        <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
-      </button>
+          <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
+        </button>
+      </SwipeToPay>
     </li>
   )
 }

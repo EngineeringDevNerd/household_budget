@@ -338,3 +338,24 @@ button.link.danger-text { color: var(--danger); }
   color: color-mix(in srgb, var(--cat) 78%, var(--fg)); background: color-mix(in srgb, var(--cat) 15%, transparent);
   vertical-align: 0.05em; white-space: nowrap;
 }
+
+/* ---------- Swipe to pay ---------- */
+/* The row's content slides right over a green "Mark paid" strip. */
+.bill.swipeable { padding: 0; display: block; position: relative; overflow: hidden; }
+.swipe { position: relative; }
+.swipe-face {
+  display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--card); position: relative;
+  touch-action: pan-y; transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.swipe-under {
+  position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding-left: 18px;
+  background: color-mix(in srgb, var(--paid) 70%, var(--card)); color: var(--accent-ink); font-weight: 700; font-size: 0.9rem;
+  transition: background-color 0.15s;
+}
+.swipe-under svg { width: 18px; height: 18px; }
+.swipe-under path { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.swipe.armed .swipe-under { background: var(--paid); }
+.bills:not(.cards) > .bill.swipeable { border-top: 1px solid var(--border); }
+
+/* ---------- Confetti ---------- */
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; }
