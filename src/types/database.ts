@@ -133,14 +133,14 @@ isOneToOne: false
                   ]
                 },"recurring_bills": {
                   Row: {
-                    "category_id": string | null,"created_at": string,"default_account_id": string | null,"default_amount_cents": number,"due_day": number | null,"frequency": string,"id": string,"is_active": boolean,"is_variable": boolean,"last_account_id": string | null,"name": string,"notes": string | null,"pay_schedule_id": string | null,"transfer_to_account_id": string | null,"updated_at": string
+                    "category_id": string | null,"created_at": string,"default_account_id": string | null,"default_amount_cents": number,"due_day": number | null,"frequency": string,"id": string,"is_active": boolean,"is_variable": boolean,"last_account_id": string | null,"name": string,"notes": string | null,"pay_from": string,"pay_schedule_id": string | null,"transfer_to_account_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents": number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name": string,"notes"?: string | null,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
+                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents": number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name": string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents"?: number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name"?: string,"notes"?: string | null,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
+                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents"?: number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name"?: string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
