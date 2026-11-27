@@ -4,7 +4,7 @@ import { formatCents } from '../../lib/money'
 import { TopBar } from '../../components/TopBar'
 import { MarkPaidDialog } from './MarkPaidDialog'
 import { UnmarkDialog } from './UnmarkDialog'
-import { EditAmountDialog } from './EditAmountDialog'
+import { BillDialog } from './BillDialog'
 import { useBoard, type Bill } from './useBoard'
 
 const sum = (bills: Bill[]) => bills.reduce((t, b) => t + b.amount_cents, 0)
@@ -14,6 +14,7 @@ export function BillsBoard() {
   const [paying, setPaying] = useState<Bill | null>(null)
   const [unpaying, setUnpaying] = useState<Bill | null>(null)
   const [editing, setEditing] = useState<Bill | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const header = <TopBar title="Bills" />
 
@@ -61,6 +62,7 @@ export function BillsBoard() {
     setPaying(null)
     setUnpaying(null)
     setEditing(null)
+    setAdding(false)
     reload()
   }
 
@@ -96,16 +98,18 @@ export function BillsBoard() {
         )}
       </section>
 
-      {bills.length === 0 && (
-        <p className="muted">No bills yet. They’ll show up here once your spreadsheet is imported.</p>
-      )}
+      <button className="add-txn" onClick={() => setAdding(true)}>
+        + Add bill
+      </button>
+
+      {bills.length === 0 && <p className="muted">No bills yet. Add one with the button above.</p>}
 
       <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} />
       <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} />
       <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} />
       <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} />
       <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} collapsed />
-      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} collapsed />
+      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} onEdit={setEditing} collapsed />
 
       {paying && (
         <MarkPaidDialog
@@ -116,7 +120,17 @@ export function BillsBoard() {
           onSaved={done}
         />
       )}
-      {editing && <EditAmountDialog bill={editing} onClose={() => setEditing(null)} onSaved={done} />}
+      {(editing || adding) && (
+        <BillDialog
+          bill={editing ?? undefined}
+          today={today}
+          accounts={data.accounts}
+          categories={data.categories}
+          paySchedules={data.paySchedules}
+          onClose={() => (setEditing(null), setAdding(false))}
+          onSaved={done}
+        />
+      )}
       {unpaying && <UnmarkDialog bill={unpaying} onClose={() => setUnpaying(null)} onSaved={done} />}
     </main>
   )
@@ -126,7 +140,7 @@ type SectionProps = {
   title: string
   bills: Bill[]
   onCheck: (b: Bill) => void
-  onEdit?: (b: Bill) => void
+  onEdit: (b: Bill) => void
   tone?: 'danger'
   collapsed?: boolean
 }
@@ -162,7 +176,7 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProp
   )
 }
 
-function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => void; onEdit?: (b: Bill) => void }) {
+function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => void; onEdit: (b: Bill) => void }) {
   const paid = bill.status === 'paid'
   return (
     <li className={paid ? 'bill paid' : 'bill'}>
@@ -173,20 +187,17 @@ function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => 
       >
         {paid ? '✓' : ''}
       </button>
-      <div className="bill-main">
-        <span className="bill-name">{bill.name}</span>
-        <span className="muted small">
-          {paid && bill.paid_date ? `Paid ${formatShortDate(bill.paid_date)}` : `Due ${formatShortDate(bill.due_date)}`}
-          {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
+      {/* Tapping anywhere but the check opens the edit popup. */}
+      <button className="txn-open" onClick={() => onEdit(bill)} aria-label={`Edit ${bill.name}`}>
+        <span className="bill-main">
+          <span className="bill-name">{bill.name}</span>
+          <span className="muted small">
+            {paid && bill.paid_date ? `Paid ${formatShortDate(bill.paid_date)}` : `Due ${formatShortDate(bill.due_date)}`}
+            {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
+          </span>
         </span>
-      </div>
-      {onEdit && !paid ? (
-        <button className="bill-amount amount-edit" onClick={() => onEdit(bill)} aria-label={`Change ${bill.name} amount`}>
-          {formatCents(bill.amount_cents)}
-        </button>
-      ) : (
         <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
-      )}
+      </button>
     </li>
   )
 }

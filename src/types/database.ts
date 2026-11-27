@@ -147,14 +147,14 @@ isOneToOne: false
                   ]
                 },"recurring_bills": {
                   Row: {
-                    "category_id": string | null,"created_at": string,"default_account_id": string | null,"default_amount_cents": number,"due_day": number | null,"frequency": string,"id": string,"is_active": boolean,"is_variable": boolean,"last_account_id": string | null,"name": string,"notes": string | null,"pay_from": string,"pay_schedule_id": string | null,"transfer_to_account_id": string | null,"updated_at": string
+                    "category_id": string | null,"created_at": string,"default_account_id": string | null,"default_amount_cents": number,"due_day": number | null,"frequency": string,"id": string,"is_active": boolean,"is_variable": boolean,"last_account_id": string | null,"name": string,"notes": string | null,"pay_from": string,"pay_schedule_id": string | null,"start_month": string | null,"transfer_to_account_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents": number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name": string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
+                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents": number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name": string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"start_month"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents"?: number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name"?: string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
+                    "category_id"?: string | null,"created_at"?: string,"default_account_id"?: string | null,"default_amount_cents"?: number,"due_day"?: number | null,"frequency"?: string,"id"?: string,"is_active"?: boolean,"is_variable"?: boolean,"last_account_id"?: string | null,"name"?: string,"notes"?: string | null,"pay_from"?: string,"pay_schedule_id"?: string | null,"start_month"?: string | null,"transfer_to_account_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -262,6 +262,12 @@ isOneToOne: false
                            },
 "mark_bill_paid":
 { Args: { "p_account_id": string,"p_amount_cents": number,"p_bill_instance_id": string,"p_category_id"?: string,"p_paid_date": string }; Returns: string
+                           },
+"update_bill":
+{ Args: { "p_bill_instance_id": string,"p_scope": string,"p_name": string,"p_amount_cents": number,"p_category_id": string | null,"p_due_day"?: number | null,"p_due_date"?: string | null,"p_default_account_id"?: string | null,"p_transfer_to_account_id"?: string | null,"p_is_variable"?: boolean,"p_pay_from"?: string }; Returns: undefined
+                           },
+"delete_bill":
+{ Args: { "p_bill_instance_id": string,"p_scope": string }; Returns: string
                            },
 "dismiss_match":
 { Args: { "p_transaction_id": string }; Returns: undefined

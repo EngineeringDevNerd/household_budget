@@ -4,17 +4,28 @@ import { addMonths, monthEnd, monthStart, todayISO } from '../../lib/dates'
 import type { Tables } from '../../types/database'
 
 export type Bill = Tables<'bill_instances'> & {
-  recurring_bills: Pick<Tables<'recurring_bills'>, 'last_account_id' | 'default_account_id'> | null
+  recurring_bills: Pick<
+    Tables<'recurring_bills'>,
+    | 'last_account_id'
+    | 'default_account_id'
+    | 'due_day'
+    | 'frequency'
+    | 'transfer_to_account_id'
+    | 'is_variable'
+    | 'pay_from'
+  > | null
   paycheck: Pick<Tables<'paychecks'>, 'pay_date'> | null
 }
 export type Account = Pick<Tables<'accounts'>, 'id' | 'name' | 'type'>
 export type Category = Pick<Tables<'categories'>, 'id' | 'name' | 'kind'>
+export type PaySchedule = Pick<Tables<'pay_schedules'>, 'id' | 'name' | 'frequency' | 'covers_bills'>
 
 export type BoardData = {
   today: string
   bills: Bill[]
   accounts: Account[]
   categories: Category[]
+  paySchedules: PaySchedule[]
   nextPayday: string | null
 }
 
@@ -35,11 +46,11 @@ export function useBoard() {
         if (genError) throw genError
       }
 
-      const [bills, accounts, categories, payday] = await Promise.all([
+      const [bills, accounts, categories, payday, schedules] = await Promise.all([
         supabase
           .from('bill_instances')
           .select(
-            '*, recurring_bills(last_account_id, default_account_id), paycheck:paychecks!bill_instances_paycheck_id_fkey(pay_date)',
+            '*, recurring_bills(last_account_id, default_account_id, due_day, frequency, transfer_to_account_id, is_variable, pay_from), paycheck:paychecks!bill_instances_paycheck_id_fkey(pay_date)',
           )
           // This month and next, plus anything older that's still unpaid.
           .or(`due_date.gte.${thisMonth},status.eq.due`)
@@ -56,14 +67,16 @@ export function useBoard() {
           .gt('pay_date', today)
           .order('pay_date')
           .limit(1),
+        supabase.from('pay_schedules').select('id, name, frequency, covers_bills').eq('is_active', true).order('name'),
       ])
-      for (const r of [bills, accounts, categories, payday]) if (r.error) throw r.error
+      for (const r of [bills, accounts, categories, payday, schedules]) if (r.error) throw r.error
 
       setData({
         today,
         bills: (bills.data ?? []) as unknown as Bill[],
         accounts: accounts.data ?? [],
         categories: categories.data ?? [],
+        paySchedules: schedules.data ?? [],
         nextPayday: payday.data?.[0]?.pay_date ?? null,
       })
       setError(null)
