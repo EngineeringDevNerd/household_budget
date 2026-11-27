@@ -54,3 +54,53 @@ button {
 button:disabled { opacity: 0.6; cursor: default; }
 button.link { background: none; color: var(--accent); padding: 8px 0; }
 .error { color: var(--error) !important; margin: 0; }
+
+/* ---------- Bills board ---------- */
+:root { --danger: #b3261e; --track: #e6e6e1; --paid: #1f7a3a; }
+@media (prefers-color-scheme: dark) { :root { --danger: #f2b8b5; --track: #2c2c29; --paid: #6fcf8a; } }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.danger-text { color: var(--danger); }
+.summary { margin: 8px 0 20px; display: flex; flex-direction: column; gap: 4px; }
+.summary p { margin: 0; }
+.big { font-size: 1.4rem; font-weight: 700; color: var(--fg) !important; }
+.month { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.month-line { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; flex-wrap: wrap; }
+.bar { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+.bar > div { height: 100%; background: var(--paid); }
+.section { margin-bottom: 16px; }
+.section h2, .section summary { font-size: 0.95rem; font-weight: 600; margin: 0 0 8px; }
+.section summary { cursor: pointer; list-style: none; }
+.section summary::-webkit-details-marker { display: none; }
+.section-title { display: flex; justify-content: space-between; width: 100%; gap: 8px; }
+.chevron { display: inline-block; width: 1em; transition: transform 0.15s; }
+details[open] .chevron { transform: rotate(90deg); }
+.bills { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.bill { display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid var(--border); }
+.bill:first-child { border-top: 0; }
+.bill-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bill-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bill-amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+.bill.paid .bill-name, .bill.paid .bill-amount { color: var(--muted); }
+.check {
+  width: 32px; height: 32px; flex: none; padding: 0; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent; color: #fff; font-size: 1rem; line-height: 1;
+}
+.check.checked { background: var(--paid); border-color: var(--paid); }
+@media (prefers-color-scheme: dark) { .check.checked { color: #10172e; } }
+
+/* ---------- Bottom sheet dialogs ---------- */
+.sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet {
+  width: 100%; max-width: 480px; background: var(--card); border-radius: 16px 16px 0 0;
+  padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+}
+@media (min-width: 600px) { .sheet-backdrop { align-items: center; } .sheet { border-radius: 16px; } }
+.sheet h2 { margin: 0; font-size: 1.15rem; }
+.sheet p { margin: 0; }
+select { font: inherit; font-size: 16px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+.row-buttons { display: flex; gap: 12px; }
+.row-buttons button { flex: 1; }
+button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+button.danger { background: var(--danger); }
+@media (prefers-color-scheme: dark) { button.danger { color: #10172e; } }
