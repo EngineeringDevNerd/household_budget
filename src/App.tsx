@@ -6,6 +6,7 @@ import { PaychecksPage } from './features/paychecks/PaychecksPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { ImportPage } from './features/import/ImportPage'
 import { RulesPage } from './features/rules/RulesPage'
+import { CategoriesPage } from './features/categories/CategoriesPage'
 
 // Hash routing (/#/bills) because GitHub Pages can't rewrite deep links to
 // index.html; a refresh on /household_budget/bills would 404 otherwise.
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/rules" element={<RulesPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>

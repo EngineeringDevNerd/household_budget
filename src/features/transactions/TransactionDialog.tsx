@@ -6,6 +6,7 @@ import type { AccountBalance, Txn, TxnCategory } from './useTransactions'
 import { RuleFieldsInputs } from '../rules/RuleFields'
 import { findRule, ruleTextFrom } from '../rules/rules'
 import { saveRule, useRuleOptions } from '../rules/saveRule'
+import { pickable } from '../../lib/categories'
 
 type Props = {
   /** null = adding a new transaction. */
@@ -194,7 +195,7 @@ export function TransactionDialog({ txn, accounts, categories, defaultAccountId,
           Category
           <select value={categoryId} onChange={(e) => pickCategory(e.target.value)}>
             {!uncategorized && <option value="">Uncategorized</option>}
-            {categories.map((c) => (
+            {pickable(categories, txn?.category_id).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

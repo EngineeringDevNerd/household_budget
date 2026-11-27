@@ -4,7 +4,7 @@ import type { Rule } from './rules'
 
 export type RuleFields = Omit<Rule, 'id'>
 export type BillOption = { id: string; name: string }
-export type CategoryOption = { id: string; name: string }
+export type CategoryOption = { id: string; name: string; is_active: boolean }
 
 /**
  * Saves a rule (updating the one with the same text, if there is one),
@@ -49,8 +49,8 @@ export function useRuleOptions() {
     let cancelled = false
     Promise.all([
       supabase.from('payee_rules').select('id, match_text, payee_name, category_id, recurring_bill_id').order('match_text'),
-      supabase.from('recurring_bills').select('id, name').eq('is_active', true).order('name'),
-      supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
+      supabase.from('recurring_bills').select('id, name, is_active').order('name'),
+      supabase.from('categories').select('id, name, is_active').order('name'),
     ]).then(([r, b, c]) => {
       if (cancelled) return
       const failed = [r, b, c].find((x) => x.error)

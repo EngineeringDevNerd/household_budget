@@ -17,7 +17,7 @@ export type Bill = Tables<'bill_instances'> & {
   paycheck: Pick<Tables<'paychecks'>, 'pay_date'> | null
 }
 export type Account = Pick<Tables<'accounts'>, 'id' | 'name' | 'type'>
-export type Category = Pick<Tables<'categories'>, 'id' | 'name' | 'kind'>
+export type Category = Pick<Tables<'categories'>, 'id' | 'name' | 'kind' | 'is_active'>
 export type PaySchedule = Pick<Tables<'pay_schedules'>, 'id' | 'name' | 'frequency' | 'covers_bills'>
 
 export type BoardData = {
@@ -59,7 +59,7 @@ export function useBoard() {
           .order('due_date')
           .order('name'),
         supabase.from('accounts').select('id, name, type').eq('is_active', true).order('sort_order').order('name'),
-        supabase.from('categories').select('id, name, kind').eq('is_active', true).order('name'),
+        supabase.from('categories').select('id, name, kind, is_active').order('name'),
         supabase
           .from('paychecks')
           .select('pay_date, pay_schedules!inner(covers_bills)')
