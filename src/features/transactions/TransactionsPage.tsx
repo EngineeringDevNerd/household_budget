@@ -61,6 +61,9 @@ export function TransactionsPage() {
   return (
     <main className="page">
       {header}
+      <p className="small top-links">
+        <Link to="/categories">Manage categories</Link>
+      </p>
 
       {suggestions && suggestions.length > 0 && (
         <Link className="match-banner" to="/import">
@@ -134,8 +137,7 @@ export function TransactionsPage() {
 
       <AccountsSection data={data} onEdit={setEditingAccount} />
       <p className="small">
-        <Link to="/rules">Payee rules</Link> decide the payee name and category for imported transactions.{' '}
-        <Link to="/categories">Manage categories</Link>
+        <Link to="/rules">Payee rules</Link> decide the payee name and category for imported transactions.
       </p>
 
       {editing && (
