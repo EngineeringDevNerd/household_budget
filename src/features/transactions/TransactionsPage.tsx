@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import { TopBar } from '../../components/TopBar'
 import { addMonths, formatMonth, formatMonthDay, formatShortDate, monthStart, todayISO } from '../../lib/dates'
 import { centsToInput, formatCents, parseDollarsToCents } from '../../lib/money'
@@ -101,9 +102,14 @@ export function TransactionsPage() {
         <p className="small">Card payments and transfers aren’t counted.</p>
       </div>
 
-      <button className="add-txn" onClick={() => setEditing('new')} disabled={data.accounts.length === 0}>
-        + Add transaction
-      </button>
+      <div className="row-buttons add-row">
+        <button onClick={() => setEditing('new')} disabled={data.accounts.length === 0}>
+          + Add transaction
+        </button>
+        <Link className="button-like secondary" to="/import">
+          Import CSV
+        </Link>
+      </div>
 
       {byDate.length === 0 && <p className="muted">No transactions in {formatMonth(month)} yet.</p>}
       {byDate.map(([date, txns]) => (

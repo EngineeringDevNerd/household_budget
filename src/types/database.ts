@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "accounts": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"name": string,"opening_balance_cents": number,"opening_balance_date": string,"sort_order": number,"type": string,"updated_at": string
+                    "card_numbers": string[],"created_at": string,"id": string,"is_active": boolean,"name": string,"opening_balance_cents": number,"opening_balance_date": string,"sort_order": number,"type": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"opening_balance_cents"?: number,"opening_balance_date"?: string,"sort_order"?: number,"type": string,"updated_at"?: string
+                    "card_numbers"?: string[],"created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"opening_balance_cents"?: number,"opening_balance_date"?: string,"sort_order"?: number,"type": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"opening_balance_cents"?: number,"opening_balance_date"?: string,"sort_order"?: number,"type"?: string,"updated_at"?: string
+                    "card_numbers"?: string[],"created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"opening_balance_cents"?: number,"opening_balance_date"?: string,"sort_order"?: number,"type"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -175,16 +175,30 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"transactions": {
+                },"import_batches": {
                   Row: {
-                    "account_id": string,"amount_cents": number,"bill_instance_id": string | null,"category_id": string | null,"created_at": string,"created_by": string | null,"id": string,"import_hash": string | null,"notes": string | null,"payee": string | null,"source": string,"transfer_group_id": string | null,"txn_date": string,"updated_at": string
+                    "created_at": string,"created_by": string | null,"file_name": string,"format": string,"id": string,"inserted_count": number,"row_count": number,"statement_total_cents": number | null,"total_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"amount_cents": number,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_hash"?: string | null,"notes"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date": string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"file_name": string,"format": string,"id"?: string,"inserted_count"?: number,"row_count"?: number,"statement_total_cents"?: number | null,"total_cents"?: number
                   }
                   Update: {
-                    "account_id"?: string,"amount_cents"?: number,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_hash"?: string | null,"notes"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"file_name"?: string,"format"?: string,"id"?: string,"inserted_count"?: number,"row_count"?: number,"statement_total_cents"?: number | null,"total_cents"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"transactions": {
+                  Row: {
+                    "account_id": string,"amount_cents": number,"bank_category": string | null,"bill_instance_id": string | null,"category_id": string | null,"created_at": string,"created_by": string | null,"id": string,"import_batch_id": string | null,"import_hash": string | null,"notes": string | null,"original_description": string | null,"payee": string | null,"source": string,"transfer_group_id": string | null,"txn_date": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"amount_cents": number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"amount_cents"?: number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -226,11 +240,17 @@ isOneToOne: false
 "generate_paychecks":
 { Args: { "p_through": string }; Returns: number
                            },
+"import_transactions":
+{ Args: { "p_file_name": string,"p_format": string,"p_rows": Json,"p_statement_total_cents": number | null }; Returns: Json
+                           },
 "mark_bill_paid":
 { Args: { "p_account_id": string,"p_amount_cents": number,"p_bill_instance_id": string,"p_category_id"?: string,"p_paid_date": string }; Returns: string
                            },
 "delete_transaction":
 { Args: { "p_transaction_id": string }; Returns: undefined
+                           },
+"undo_import":
+{ Args: { "p_batch_id": string }; Returns: number
                            },
 "unmark_bill_paid":
 { Args: { "p_bill_instance_id": string }; Returns: undefined
