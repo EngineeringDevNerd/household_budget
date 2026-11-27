@@ -157,7 +157,7 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProp
     </span>
   )
   const list = (
-    <ul className="bills">
+    <ul className="bills cards">
       {bills.map((b) => (
         <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} />
       ))}
