@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { TopBar } from '../../components/TopBar'
 import { supabase } from '../../lib/supabase'
-import { addMonths, formatMonth, monthStart, todayISO } from '../../lib/dates'
+import { addMonths, formatMonth, monthEnd, monthStart, todayISO } from '../../lib/dates'
 import { centsToInput, formatCents, parseDollarsToCents } from '../../lib/money'
+import { NO_CATEGORY, spendingByCategory } from './spending'
 
 type Line = {
   category_id: string
@@ -13,7 +14,12 @@ type Line = {
   set_month: string | null
   bills_cents: number
   budget_cents: number
+  /** Spent this month: money out minus refunds, from transactions. */
+  spent_cents: number
+  /** Bills in this category that aren't paid yet. */
+  due_cents: number
 }
+
 
 function useBudget(month: string) {
   const [lines, setLines] = useState<Line[] | null>(null)
@@ -31,19 +37,51 @@ function useBudget(month: string) {
         const { error: genError } = await supabase.rpc('generate_month', { p_month: month })
         if (genError) throw genError
       }
-      const [budget, cats] = await Promise.all([
+      const [budget, cats, txns, due] = await Promise.all([
         supabase.rpc('budget_for_month', { p_month: month }),
-        supabase.from('categories').select('id, name, is_active'),
+        supabase.from('categories').select('id, name, kind, is_active'),
+        supabase
+          .from('transactions')
+          .select('amount_cents, category_id, transfer_group_id')
+          .gte('txn_date', month)
+          .lte('txn_date', monthEnd(month)),
+        supabase.from('bill_instances').select('amount_cents, category_id').eq('bill_month', month).eq('status', 'due'),
       ])
-      if (budget.error) throw budget.error
-      if (cats.error) throw cats.error
+      for (const res of [budget, cats, txns, due]) if (res.error) throw res.error
       const byId = new Map((cats.data ?? []).map((c) => [c.id, c]))
+      const expenseIds = new Set((cats.data ?? []).filter((c) => c.kind === 'expense').map((c) => c.id))
+      const spent = spendingByCategory(txns.data ?? [], expenseIds)
+      const dueBy = new Map<string, number>()
+      for (const b of due.data ?? []) {
+        if (b.category_id && expenseIds.has(b.category_id))
+          dueBy.set(b.category_id, (dueBy.get(b.category_id) ?? 0) + b.amount_cents)
+      }
+      const list: Line[] = (budget.data ?? []).map((b) => ({
+        ...b,
+        name: byId.get(b.category_id)?.name ?? '?',
+        is_active: byId.get(b.category_id)?.is_active ?? true,
+        spent_cents: spent.get(b.category_id) ?? 0,
+        due_cents: dueBy.get(b.category_id) ?? 0,
+      }))
+      const uncategorized = spent.get(NO_CATEGORY) ?? 0
+      if (uncategorized !== 0) {
+        list.push({
+          category_id: NO_CATEGORY,
+          name: 'No category',
+          is_active: true,
+          set_cents: null,
+          set_month: null,
+          bills_cents: 0,
+          budget_cents: 0,
+          spent_cents: uncategorized,
+          due_cents: 0,
+        })
+      }
       setLines(
-        (budget.data ?? [])
-          .map((b) => ({ ...b, name: byId.get(b.category_id)?.name ?? '?', is_active: byId.get(b.category_id)?.is_active ?? true }))
-          // Hidden categories only show up if they still have a budget or bills.
-          .filter((l) => l.is_active || l.budget_cents > 0)
-          .sort((a, b) => b.budget_cents - a.budget_cents || a.name.localeCompare(b.name)),
+        list
+          // Hidden categories only show up if they still have a budget or spending.
+          .filter((l) => l.is_active || l.budget_cents > 0 || l.spent_cents !== 0)
+          .sort((a, b) => b.budget_cents - a.budget_cents || b.spent_cents - a.spent_cents || a.name.localeCompare(b.name)),
       )
       setError(null)
     } catch (e) {
@@ -98,6 +136,8 @@ export function BudgetPage() {
   }
 
   const total = lines.reduce((t, l) => t + l.budget_cents, 0)
+  const spentTotal = lines.reduce((t, l) => t + l.spent_cents, 0)
+  const dueTotal = lines.reduce((t, l) => t + l.due_cents, 0)
   const budgeted = lines.filter((l) => l.budget_cents > 0)
   const unbudgeted = lines.filter((l) => l.budget_cents === 0)
 
@@ -107,8 +147,16 @@ export function BudgetPage() {
       {switcher}
 
       <section className="card summary">
-        <p className="big">{formatCents(total)}</p>
-        <p className="muted">budgeted for spending in {formatMonth(month)}</p>
+        <p className="big">
+          {formatCents(spentTotal)} <span className="muted small">spent of {formatCents(total)}</span>
+        </p>
+        <Meter spent={spentTotal} due={dueTotal} budget={total} />
+        <p className="muted small">
+          {dueTotal > 0 ? `${formatCents(dueTotal)} in bills still due · ` : ''}
+          {total - spentTotal - dueTotal >= 0
+            ? `${formatCents(total - spentTotal - dueTotal)} left`
+            : `${formatCents(spentTotal + dueTotal - total)} over`}
+        </p>
       </section>
 
       <p className="small">
@@ -159,6 +207,9 @@ export function BudgetPage() {
 
 function describe(l: Line, month: string): string {
   const parts: string[] = []
+  if (l.spent_cents !== 0 || l.due_cents > 0) {
+    parts.push(`Spent ${formatCents(l.spent_cents)}${l.due_cents > 0 ? ` · ${formatCents(l.due_cents)} due` : ''}`)
+  }
   if (l.bills_cents > 0) parts.push(`Bills ${formatCents(l.bills_cents)}`)
   if (l.set_cents !== null) {
     parts.push(
@@ -170,19 +221,52 @@ function describe(l: Line, month: string): string {
   return parts.join(' · ') || 'Tap to set a budget'
 }
 
-function BudgetRow({ line, month, onOpen }: { line: Line; month: string; onOpen: () => void }) {
+// Solid = spent, light = bills still due, against the budget. Turns red
+// once spent + due goes past the budget.
+function Meter({ spent, due, budget }: { spent: number; due: number; budget: number }) {
+  if (budget <= 0) return null
+  const pct = (n: number) => `${Math.max(0, Math.min(100, (n / budget) * 100))}%`
+  const over = spent + due > budget
   return (
-    <li className="bill">
-      <button className="txn-open" onClick={onOpen} aria-label={`Set budget for ${line.name}`}>
+    <div
+      className={over ? 'bar meter over' : 'bar meter'}
+      role="img"
+      aria-label={`${formatCents(spent)} spent and ${formatCents(due)} due of ${formatCents(budget)}`}
+    >
+      <div className="spent" style={{ width: pct(spent) }} />
+      <div className="due" style={{ width: pct(Math.min(due, budget - Math.max(spent, 0))) }} />
+    </div>
+  )
+}
+
+function BudgetRow({ line, month, onOpen }: { line: Line; month: string; onOpen: () => void }) {
+  const editable = line.category_id !== NO_CATEGORY
+  const body = (
+    <span className="budget-line">
+      <span className="budget-top">
         <span className="bill-main">
           <span className="bill-name">
             {line.name}
             {!line.is_active && <span className="muted small"> (hidden)</span>}
           </span>
-          <span className="muted small">{describe(line, month)}</span>
+          <span className="muted small">
+            {editable ? describe(line, month) : `Spent ${formatCents(line.spent_cents)} · categorize it on Transactions`}
+          </span>
         </span>
         <span className="bill-amount">{line.budget_cents ? formatCents(line.budget_cents) : '—'}</span>
-      </button>
+      </span>
+      <Meter spent={line.spent_cents} due={line.due_cents} budget={line.budget_cents} />
+    </span>
+  )
+  return (
+    <li className="bill">
+      {editable ? (
+        <button className="txn-open" onClick={onOpen} aria-label={`Set budget for ${line.name}`}>
+          {body}
+        </button>
+      ) : (
+        body
+      )}
     </li>
   )
 }

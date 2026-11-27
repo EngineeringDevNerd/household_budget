@@ -200,3 +200,9 @@ button.link.danger-text { color: var(--danger); }
 /* ---------- Bill edit popup ---------- */
 .scope-buttons { display: flex; flex-direction: column; gap: 10px; }
 .field-help { margin-top: 6px !important; }
+.budget-line { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
+.budget-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.meter { display: flex; }
+.meter > .spent { background: var(--paid); }
+.meter > .due { background: var(--paid); opacity: 0.35; }
+.meter.over > .spent, .meter.over > .due { background: var(--danger); }
