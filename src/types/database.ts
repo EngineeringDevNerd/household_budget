@@ -111,6 +111,20 @@ isOneToOne: false
       referencedColumns: ["user_id"]
     }
                   ]
+                },"payee_rules": {
+                  Row: {
+                    "category_id": string | null,"created_at": string,"id": string,"match_text": string,"payee_name": string | null,"recurring_bill_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id"?: string | null,"created_at"?: string,"id"?: string,"match_text": string,"payee_name"?: string | null,"recurring_bill_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string | null,"created_at"?: string,"id"?: string,"match_text"?: string,"payee_name"?: string | null,"recurring_bill_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"paychecks": {
                   Row: {
                     "actual_amount_cents": number | null,"created_at": string,"expected_amount_cents": number,"id": string,"notes": string | null,"pay_date": string,"pay_schedule_id": string,"received_on": string | null,"updated_at": string
@@ -251,6 +265,9 @@ isOneToOne: false
                            },
 "dismiss_match":
 { Args: { "p_transaction_id": string }; Returns: undefined
+                           },
+"apply_payee_rule":
+{ Args: { "p_rule_id": string }; Returns: number
                            },
 "delete_transaction":
 { Args: { "p_transaction_id": string }; Returns: undefined

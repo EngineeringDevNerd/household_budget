@@ -133,6 +133,9 @@ export function TransactionsPage() {
       ))}
 
       <AccountsSection data={data} onEdit={setEditingAccount} />
+      <p className="small">
+        <Link to="/rules">Payee rules</Link> decide the payee name and category for imported transactions.
+      </p>
 
       {editing && (
         <TransactionDialog

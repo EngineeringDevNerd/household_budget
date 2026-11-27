@@ -134,13 +134,13 @@ function Preview({
   useEffect(() => {
     if (!allAssigned || parsed.rows.length === 0) return
     let cancelled = false
-    buildPreview(parsed.rows, detected, groupAccounts, data.accounts, data.categories)
+    buildPreview(parsed.rows, detected, groupAccounts, data.accounts, data.categories, data.rules)
       .then((r) => !cancelled && setRows(r))
       .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
     return () => {
       cancelled = true
     }
-  }, [parsed, detected, groupAccounts, allAssigned, data.accounts, data.categories])
+  }, [parsed, detected, groupAccounts, allAssigned, data.accounts, data.categories, data.rules])
 
   const visibleRows = allAssigned ? rows : null
   const included = (visibleRows ?? []).filter((r) => r.include)

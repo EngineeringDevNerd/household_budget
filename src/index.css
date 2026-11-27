@@ -194,3 +194,9 @@ button.link.danger-text { color: var(--danger); }
   background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--fg); font-size: 0.9rem; font-weight: 600;
 }
 .row-buttons.compact button { white-space: nowrap; }
+
+/* ---------- Payee rules ---------- */
+.always { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.always p { margin: 0; overflow-wrap: anywhere; }
+.form label.check-label { flex-direction: row; align-items: center; gap: 10px; }
+.check-label input { width: 20px; height: 20px; }

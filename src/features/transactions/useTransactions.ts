@@ -15,6 +15,7 @@ export type Txn = Pick<
   | 'bill_instance_id'
   | 'transfer_group_id'
   | 'source'
+  | 'original_description'
 >
 export type AccountBalance = Tables<'account_balances'>
 export type TxnCategory = Pick<Tables<'categories'>, 'id' | 'name' | 'kind'>
@@ -37,7 +38,9 @@ export function useTransactions(month: string) {
       const [txns, accounts, categories] = await Promise.all([
         supabase
           .from('transactions')
-          .select('id, txn_date, amount_cents, account_id, category_id, payee, notes, bill_instance_id, transfer_group_id, source')
+          .select(
+            'id, txn_date, amount_cents, account_id, category_id, payee, notes, bill_instance_id, transfer_group_id, source, original_description',
+          )
           .gte('txn_date', month)
           .lte('txn_date', monthEnd(month))
           .order('txn_date', { ascending: false })

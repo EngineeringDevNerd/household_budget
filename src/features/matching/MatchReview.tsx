@@ -105,6 +105,9 @@ export function MatchReview({
                   {formatCents(s.bill.amount_cents)})?
                 </div>
                 <div className="small">Bank: {line(s.txn)}</div>
+                {s.byRule && s.bill.amount_cents !== -s.txn.amount_cents && (
+                  <p className="small">Matched by your payee rule; the amount differs from the bill’s.</p>
+                )}
                 <p className="muted small">
                   {s.bill.status === 'paid'
                     ? 'This bill is already checked off; linking records this as its payment.'

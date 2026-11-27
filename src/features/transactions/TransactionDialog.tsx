@@ -3,6 +3,9 @@ import { supabase } from '../../lib/supabase'
 import { centsToInput, parseDollarsToCents } from '../../lib/money'
 import { todayISO } from '../../lib/dates'
 import type { AccountBalance, Txn, TxnCategory } from './useTransactions'
+import { RuleFieldsInputs } from '../rules/RuleFields'
+import { findRule, ruleTextFrom } from '../rules/rules'
+import { saveRule, useRuleOptions } from '../rules/saveRule'
 
 type Props = {
   /** null = adding a new transaction. */
@@ -30,6 +33,15 @@ export function TransactionDialog({ txn, accounts, categories, defaultAccountId,
   const [payee, setPayee] = useState(txn?.payee ?? '')
   const [categoryId, setCategoryId] = useState(txn ? (txn.category_id ?? '') : uncategorized)
   const [notes, setNotes] = useState(txn?.notes ?? '')
+  // "Always do this for transactions like this": saves a payee rule too.
+  const bankText = txn?.original_description ?? ''
+  const ruleOptions = useRuleOptions()
+  const existingRule = bankText && ruleOptions.rules ? findRule(bankText, ruleOptions.rules) : undefined
+  const [always, setAlways] = useState(false)
+  const [ruleText, setRuleText] = useState<string | null>(null)
+  const [ruleBillId, setRuleBillId] = useState<string | null>(null)
+  const shownRuleText = ruleText ?? existingRule?.match_text ?? ruleTextFrom(bankText)
+  const shownRuleBill = ruleBillId ?? existingRule?.recurring_bill_id ?? ''
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -62,7 +74,28 @@ export function TransactionDialog({ txn, accounts, categories, defaultAccountId,
           : supabase!.from('transactions').insert({ ...row, source: 'manual' }),
       )
     }
-    if (result) onSaved()
+    if (!result) return
+    if (always && bankText) {
+      try {
+        setBusy(true)
+        await saveRule(
+          {
+            match_text: shownRuleText,
+            payee_name: payee.trim() || null,
+            category_id: categoryId && categoryId !== uncategorized ? categoryId : null,
+            recurring_bill_id: shownRuleBill || null,
+          },
+          existingRule && existingRule.match_text.trim().toLowerCase() === shownRuleText.trim().toLowerCase()
+            ? existingRule.id
+            : undefined,
+        )
+      } catch (err) {
+        setBusy(false)
+        return setError(`The transaction was saved, but the rule wasn’t: ${err instanceof Error ? err.message : String(err)}`)
+      }
+      setBusy(false)
+    }
+    onSaved()
   }
 
   async function onDelete() {
@@ -172,6 +205,34 @@ export function TransactionDialog({ txn, accounts, categories, defaultAccountId,
           Notes
           <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
+
+        {bankText && (
+          <div className="always">
+            <label className="check-label">
+              <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} />
+              Always do this for transactions like this
+            </label>
+            <p className="muted small">Bank description: {bankText}</p>
+            {existingRule && !always && (
+              <p className="muted small">A rule for “{existingRule.match_text}” already applies to this.</p>
+            )}
+            {always && (
+              <>
+                <RuleFieldsInputs
+                  text={shownRuleText}
+                  setText={setRuleText}
+                  billId={shownRuleBill}
+                  setBillId={setRuleBillId}
+                  bills={ruleOptions.bills}
+                />
+                <p className="muted small">
+                  Future imports get this payee and category. Past transactions that are still Uncategorized are updated
+                  too.
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {error && (
           <p className="error" role="alert">

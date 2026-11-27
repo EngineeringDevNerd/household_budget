@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../types/database'
+import type { Rule } from '../rules/rules'
 
 export type ImportAccount = Pick<
   Tables<'accounts'>,
@@ -12,7 +13,7 @@ export type Batch = Pick<
   'id' | 'file_name' | 'format' | 'row_count' | 'inserted_count' | 'total_cents' | 'created_at'
 >
 
-export type ImportData = { accounts: ImportAccount[]; categories: ImportCategory[]; batches: Batch[] }
+export type ImportData = { accounts: ImportAccount[]; categories: ImportCategory[]; batches: Batch[]; rules: Rule[] }
 
 export function useImportData() {
   const [data, setData] = useState<ImportData | null>(null)
@@ -20,7 +21,7 @@ export function useImportData() {
 
   const load = useCallback(async () => {
     if (!supabase) return
-    const [accounts, categories, batches] = await Promise.all([
+    const [accounts, categories, batches, rules] = await Promise.all([
       supabase
         .from('accounts')
         .select('id, name, type, card_numbers, opening_balance_date, is_active')
@@ -32,10 +33,16 @@ export function useImportData() {
         .select('id, file_name, format, row_count, inserted_count, total_cents, created_at')
         .order('created_at', { ascending: false })
         .limit(10),
+      supabase.from('payee_rules').select('id, match_text, payee_name, category_id, recurring_bill_id'),
     ])
-    const failed = [accounts, categories, batches].find((r) => r.error)
+    const failed = [accounts, categories, batches, rules].find((r) => r.error)
     if (failed?.error) return setError(failed.error.message)
-    setData({ accounts: accounts.data ?? [], categories: categories.data ?? [], batches: batches.data ?? [] })
+    setData({
+      accounts: accounts.data ?? [],
+      categories: categories.data ?? [],
+      batches: batches.data ?? [],
+      rules: rules.data ?? [],
+    })
     setError(null)
   }, [])
 
