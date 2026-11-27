@@ -1,4 +1,5 @@
 import { daysBetween } from '../../lib/dates'
+import { findRule } from '../rules/rules'
 
 // Pure matching rules, kept apart from the screen so they're easy to read
 // and test. Nothing here changes data; the review list asks you first.
@@ -14,13 +15,22 @@ export type MatchTxn = {
   transfer_group_id: string | null
   source: string
 }
-export type MatchBill = { id: string; name: string; due_date: string; amount_cents: number; status: string }
+export type MatchBill = {
+  id: string
+  name: string
+  due_date: string
+  amount_cents: number
+  status: string
+  recurring_bill_id: string | null
+}
+/** Payee rules that tie a description to a bill. */
+export type BillRule = { match_text: string; recurring_bill_id: string | null }
 export type MatchAccount = { id: string; name: string; type: string }
 
 export type Suggestion =
   | { kind: 'link'; key: string; imported: MatchTxn; existing: MatchTxn }
   | { kind: 'pair'; key: string; out: MatchTxn; in: MatchTxn }
-  | { kind: 'bill'; key: string; txn: MatchTxn; bill: MatchBill }
+  | { kind: 'bill'; key: string; txn: MatchTxn; bill: MatchBill; byRule: boolean }
 
 /** Same money recorded twice: within this many days of each other. */
 export const LINK_DAYS = 4
@@ -57,6 +67,7 @@ export function findMatches(input: {
   /** Bills that are due, or checked off but with no payment row yet. */
   dueBills: MatchBill[]
   accounts: MatchAccount[]
+  rules?: BillRule[]
 }): Suggestion[] {
   const out: Suggestion[] = []
   const isCard = (accountId: string) => input.accounts.find((a) => a.id === accountId)?.type === 'credit'
@@ -85,15 +96,32 @@ export function findMatches(input: {
     if (m) out.push({ kind: 'pair', key: `pair:${r.id}`, out: r, in: m })
   }
 
-  // 3. A bank payment for exactly a due bill's amount, near its due date.
-  //    (Can sit alongside a pair: a card-payment bill is both.)
+  // 3. A bank payment for a bill, near its due date. (Can sit alongside a
+  //    pair: a card-payment bill is both.)
+  //    a) Your payee rule ties this description to a bill: any amount,
+  //       because bills like electric change every month.
+  //    b) Otherwise: exactly the bill's amount.
   const usedBills = new Set<MatchBill>()
-  for (const r of free) {
-    if (r.amount_cents >= 0 || r.bill_instance_id) continue
+  const billRules = (input.rules ?? []).filter((x) => x.recurring_bill_id)
+  const payments = free.filter((r) => r.amount_cents < 0 && !r.bill_instance_id)
+  const byRule = new Set<string>()
+  for (const r of payments) {
+    const rule = findRule(r.original_description ?? r.payee ?? '', billRules)
+    if (!rule) continue
+    const m = closest(r.txn_date, input.dueBills, usedBills, (b) =>
+      b.recurring_bill_id === rule.recurring_bill_id && gap(b.due_date, r.txn_date) <= BILL_DAYS,
+    )
+    if (m) {
+      out.push({ kind: 'bill', key: `bill:${r.id}`, txn: r, bill: m, byRule: true })
+      byRule.add(r.id)
+    }
+  }
+  for (const r of payments) {
+    if (byRule.has(r.id)) continue
     const m = closest(r.txn_date, input.dueBills, usedBills, (b) =>
       b.amount_cents === -r.amount_cents && gap(b.due_date, r.txn_date) <= BILL_DAYS,
     )
-    if (m) out.push({ kind: 'bill', key: `bill:${r.id}`, txn: r, bill: m })
+    if (m) out.push({ kind: 'bill', key: `bill:${r.id}`, txn: r, bill: m, byRule: false })
   }
 
   const date = (s: Suggestion) => (s.kind === 'link' ? s.imported : s.kind === 'pair' ? s.out : s.txn).txn_date

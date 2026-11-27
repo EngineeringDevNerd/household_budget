@@ -12,7 +12,7 @@ export function useMatches() {
 
   const load = useCallback(async () => {
     if (!supabase) return
-    const [imported, appRows, bills, accts, billTxns] = await Promise.all([
+    const [imported, appRows, bills, accts, billTxns, rules] = await Promise.all([
       supabase
         .from('transactions')
         .select(TXN_COLUMNS)
@@ -20,11 +20,12 @@ export function useMatches() {
         .eq('match_dismissed', false)
         .or('bill_instance_id.is.null,transfer_group_id.is.null'),
       supabase.from('transactions').select(TXN_COLUMNS).neq('source', 'csv').is('import_hash', null),
-      supabase.from('bill_instances').select('id, name, due_date, amount_cents, status').in('status', ['due', 'paid']),
+      supabase.from('bill_instances').select('id, name, due_date, amount_cents, status, recurring_bill_id').in('status', ['due', 'paid']),
       supabase.from('accounts').select('id, name, type'),
       supabase.from('transactions').select('bill_instance_id').not('bill_instance_id', 'is', null),
+      supabase.from('payee_rules').select('match_text, recurring_bill_id').not('recurring_bill_id', 'is', null),
     ])
-    const failed = [imported, appRows, bills, accts, billTxns].find((r) => r.error)
+    const failed = [imported, appRows, bills, accts, billTxns, rules].find((r) => r.error)
     if (failed?.error) return setError(failed.error.message)
     setAccounts(accts.data ?? [])
     setSuggestions(
@@ -36,6 +37,7 @@ export function useMatches() {
           (b) => b.status === 'due' || !(billTxns.data ?? []).some((t) => t.bill_instance_id === b.id),
         ),
         accounts: accts.data ?? [],
+        rules: rules.data ?? [],
       }),
     )
     setError(null)

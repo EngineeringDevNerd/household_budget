@@ -3,6 +3,7 @@ import { addDays, daysBetween } from '../../lib/dates'
 import { cleanPayee, guessCategory } from './categorize'
 import type { Detected, ParsedRow } from './formats'
 import { fingerprints } from './hash'
+import { findRule, type Rule } from '../rules/rules'
 import type { ImportAccount, ImportCategory } from './useImportData'
 
 export type RowStatus = 'new' | 'duplicate' | 'possible' | 'before_start'
@@ -60,6 +61,7 @@ export async function buildPreview(
   groupAccounts: Record<string, string>,
   accounts: ImportAccount[],
   categories: ImportCategory[],
+  rules: Rule[] = [],
 ): Promise<PreviewRow[]> {
   if (!supabase) return []
   const withAccount = parsed.map((r) => ({ ...r, accountId: groupAccounts[groupKey(r, d)] }))
@@ -93,15 +95,17 @@ export async function buildPreview(
 
   return withAccount.map((r, i) => {
     const account = accounts.find((a) => a.id === r.accountId)
+    // Your rules win over the built-in guesses.
+    const rule = findRule(r.description, rules)
     const base = {
       line: r.line,
       date: r.date,
       description: r.description,
-      payee: cleanPayee(r.description),
+      payee: rule?.payee_name ?? cleanPayee(r.description),
       amountCents: r.amountCents,
       accountId: r.accountId,
       bankCategory: r.bankCategory,
-      categoryId: categoryId(guessCategory({ ...r, accountType: account?.type ?? 'checking' })),
+      categoryId: rule?.category_id ?? categoryId(guessCategory({ ...r, accountType: account?.type ?? 'checking' })),
       hash: hashes[i],
     }
     if (existing.has(hashes[i])) {
