@@ -19,6 +19,7 @@ insert into public.categories (name, kind) values
   ('Shopping',      'expense'),
   ('Kids/Sports',   'expense'),
   ('Entertainment', 'expense'),
+  ('Interest & Fees', 'expense'),
   ('Income',        'income'),
   ('Uncategorized', 'expense')
 on conflict (name) do nothing;
