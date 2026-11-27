@@ -4,6 +4,7 @@ import { formatCents } from '../../lib/money'
 import { TopBar } from '../../components/TopBar'
 import { MarkPaidDialog } from './MarkPaidDialog'
 import { UnmarkDialog } from './UnmarkDialog'
+import { EditAmountDialog } from './EditAmountDialog'
 import { useBoard, type Bill } from './useBoard'
 
 const sum = (bills: Bill[]) => bills.reduce((t, b) => t + b.amount_cents, 0)
@@ -12,6 +13,7 @@ export function BillsBoard() {
   const { data, error, reload } = useBoard()
   const [paying, setPaying] = useState<Bill | null>(null)
   const [unpaying, setUnpaying] = useState<Bill | null>(null)
+  const [editing, setEditing] = useState<Bill | null>(null)
 
   const header = <TopBar title="Bills" />
 
@@ -58,6 +60,7 @@ export function BillsBoard() {
   const done = () => {
     setPaying(null)
     setUnpaying(null)
+    setEditing(null)
     reload()
   }
 
@@ -97,11 +100,11 @@ export function BillsBoard() {
         <p className="muted">No bills yet. They’ll show up here once your spreadsheet is imported.</p>
       )}
 
-      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} />
-      <Section title="Due today" bills={dueToday} onCheck={setPaying} />
-      <Section title="This week" bills={thisWeek} onCheck={setPaying} />
-      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} />
-      <Section title="Later" bills={later} onCheck={setPaying} collapsed />
+      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} />
+      <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} />
+      <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} />
+      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} />
+      <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} collapsed />
       <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} collapsed />
 
       {paying && (
@@ -113,6 +116,7 @@ export function BillsBoard() {
           onSaved={done}
         />
       )}
+      {editing && <EditAmountDialog bill={editing} onClose={() => setEditing(null)} onSaved={done} />}
       {unpaying && <UnmarkDialog bill={unpaying} onClose={() => setUnpaying(null)} onSaved={done} />}
     </main>
   )
@@ -122,11 +126,12 @@ type SectionProps = {
   title: string
   bills: Bill[]
   onCheck: (b: Bill) => void
+  onEdit?: (b: Bill) => void
   tone?: 'danger'
   collapsed?: boolean
 }
 
-function Section({ title, bills, onCheck, tone, collapsed }: SectionProps) {
+function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProps) {
   if (bills.length === 0) return null
   const heading = (
     <span className="section-title">
@@ -140,7 +145,7 @@ function Section({ title, bills, onCheck, tone, collapsed }: SectionProps) {
   const list = (
     <ul className="bills">
       {bills.map((b) => (
-        <BillRow key={b.id} bill={b} onCheck={onCheck} />
+        <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} />
       ))}
     </ul>
   )
@@ -157,7 +162,7 @@ function Section({ title, bills, onCheck, tone, collapsed }: SectionProps) {
   )
 }
 
-function BillRow({ bill, onCheck }: { bill: Bill; onCheck: (b: Bill) => void }) {
+function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => void; onEdit?: (b: Bill) => void }) {
   const paid = bill.status === 'paid'
   return (
     <li className={paid ? 'bill paid' : 'bill'}>
@@ -175,7 +180,13 @@ function BillRow({ bill, onCheck }: { bill: Bill; onCheck: (b: Bill) => void }) 
           {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
         </span>
       </div>
-      <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
+      {onEdit && !paid ? (
+        <button className="bill-amount amount-edit" onClick={() => onEdit(bill)} aria-label={`Change ${bill.name} amount`}>
+          {formatCents(bill.amount_cents)}
+        </button>
+      ) : (
+        <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
+      )}
     </li>
   )
 }
