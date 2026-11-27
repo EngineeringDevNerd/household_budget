@@ -12,6 +12,7 @@ export function TopBar({ title }: { title: string }) {
         </NavLink>
         <NavLink to="/paychecks">Paychecks</NavLink>
         <NavLink to="/transactions">Transactions</NavLink>
+        <NavLink to="/budget">Budget</NavLink>
         <button className="link" onClick={signOut} title={displayName ? `Signed in as ${displayName}` : undefined}>
           Sign out
         </button>
