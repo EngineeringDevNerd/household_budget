@@ -3,6 +3,7 @@ import { addDays, daysBetween, formatMonth, formatMonthDay, formatShortDate, mon
 import { formatCents } from '../../lib/money'
 import { TopBar } from '../../components/TopBar'
 import { ProgressRing } from '../../components/ProgressRing'
+import { CategoryDot, CategoryTag } from '../../components/CategoryDot'
 import { Toast, type ToastState } from '../../components/Toast'
 import { useCountUp } from '../../lib/useCountUp'
 import { supabase } from '../../lib/supabase'
@@ -92,6 +93,8 @@ export function BillsBoard() {
     reload()
   }
 
+  const categoryName = (id: string | null) => data.categories.find((c) => c.id === id)?.name ?? null
+
   const done = () => {
     setPaying(null)
     setUnpaying(null)
@@ -121,12 +124,12 @@ export function BillsBoard() {
 
       {bills.length === 0 && <p className="muted">No bills yet. Add one with the button above.</p>}
 
-      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
-      <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
-      <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
-      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
-      <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} collapsed />
-      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} onEdit={setEditing} justPaid={justPaid} collapsed />
+      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} />
+      <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} />
+      <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} />
+      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} />
+      <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} collapsed />
+      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} onEdit={setEditing} justPaid={justPaid} categoryName={categoryName} collapsed />
 
       {paying && (
         <MarkPaidDialog
@@ -162,9 +165,10 @@ type SectionProps = {
   tone?: 'danger'
   collapsed?: boolean
   justPaid: string | null
+  categoryName: (id: string | null) => string | null
 }
 
-function Section({ title, bills, onCheck, onEdit, tone, collapsed, justPaid }: SectionProps) {
+function Section({ title, bills, onCheck, onEdit, tone, collapsed, justPaid, categoryName }: SectionProps) {
   if (bills.length === 0) return null
   const heading = (
     <span className="section-title">
@@ -178,7 +182,7 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed, justPaid }: S
   const list = (
     <ul className="bills cards">
       {bills.map((b) => (
-        <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} leaving={b.id === justPaid} />
+        <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} leaving={b.id === justPaid} categoryName={categoryName(b.category_id)} />
       ))}
     </ul>
   )
@@ -195,9 +199,15 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed, justPaid }: S
   )
 }
 
-type RowProps = { bill: Bill; onCheck: (b: Bill) => void; onEdit: (b: Bill) => void; leaving: boolean }
+type RowProps = {
+  bill: Bill
+  onCheck: (b: Bill) => void
+  onEdit: (b: Bill) => void
+  leaving: boolean
+  categoryName: string | null
+}
 
-function BillRow({ bill, onCheck, onEdit, leaving }: RowProps) {
+function BillRow({ bill, onCheck, onEdit, leaving, categoryName }: RowProps) {
   const paid = bill.status === 'paid' || leaving
   return (
     <li className={['bill', paid && 'paid', leaving && 'leaving'].filter(Boolean).join(' ')}>
@@ -214,10 +224,19 @@ function BillRow({ bill, onCheck, onEdit, leaving }: RowProps) {
       {/* Tapping anywhere but the check opens the edit popup. */}
       <button className="txn-open" onClick={() => onEdit(bill)} aria-label={`Edit ${bill.name}`}>
         <span className="bill-main">
-          <span className="bill-name">{bill.name}</span>
+          <span className="bill-name">
+            <CategoryDot id={bill.category_id} />
+            {bill.name}
+          </span>
           <span className="muted small">
             {paid && bill.paid_date ? `Paid ${formatShortDate(bill.paid_date)}` : `Due ${formatShortDate(bill.due_date)}`}
             {bill.paycheck && !paid ? ` · ${formatMonthDay(bill.paycheck.pay_date)} check` : ''}
+            {categoryName && (
+              <>
+                {' '}
+                <CategoryTag id={bill.category_id} name={categoryName} />
+              </>
+            )}
           </span>
         </span>
         <span className="bill-amount">{formatCents(bill.amount_cents)}</span>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { TopBar } from '../../components/TopBar'
+import { CategoryDot } from '../../components/CategoryDot'
 import { addMonths, formatMonth, formatMonthDay, formatShortDate, monthStart, todayISO } from '../../lib/dates'
 import { centsToInput, formatCents, parseDollarsToCents } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
@@ -171,7 +172,10 @@ function TxnRow({ txn: t, data, onOpen }: { txn: Txn; data: TransactionsData; on
     <li className="bill">
       <button className="txn-open" onClick={onOpen} aria-label={`Edit ${t.payee ?? 'transaction'}`}>
         <div className="bill-main">
-          <span className="bill-name">{t.payee || 'No payee'}</span>
+          <span className="bill-name">
+            <CategoryDot id={t.category_id} />
+            {t.payee || 'No payee'}
+          </span>
           <span className="muted small">{tags.join(' · ')}</span>
         </div>
         <span className={t.amount_cents > 0 ? 'bill-amount ok' : 'bill-amount'}>
