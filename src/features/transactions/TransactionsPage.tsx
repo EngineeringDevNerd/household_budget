@@ -5,6 +5,7 @@ import { addMonths, formatMonth, formatMonthDay, formatShortDate, monthStart, to
 import { centsToInput, formatCents, parseDollarsToCents } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
 import { TransactionDialog } from './TransactionDialog'
+import { useMatches } from '../matching/useMatches'
 import { isTransfer, useTransactions, type AccountBalance, type Txn, type TransactionsData } from './useTransactions'
 
 const ALL = ''
@@ -17,6 +18,7 @@ export function TransactionsPage() {
   const [editing, setEditing] = useState<Txn | 'new' | null>(null)
   const [editingAccount, setEditingAccount] = useState<AccountBalance | null>(null)
   const { data, error, reload } = useTransactions(month)
+  const { suggestions } = useMatches()
   const header = <TopBar title="Transactions" />
 
   if (error) {
@@ -59,6 +61,13 @@ export function TransactionsPage() {
   return (
     <main className="page">
       {header}
+
+      {suggestions && suggestions.length > 0 && (
+        <Link className="match-banner" to="/import">
+          {suggestions.length} possible match{suggestions.length === 1 ? '' : 'es'} to review. Until then some money may
+          be counted twice. Review →
+        </Link>
+      )}
 
       <div className="month-switch">
         <button className="secondary" aria-label="Previous month" onClick={() => setMonth(addMonths(month, -1))}>

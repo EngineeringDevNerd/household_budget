@@ -191,14 +191,14 @@ isOneToOne: false
                   ]
                 },"transactions": {
                   Row: {
-                    "account_id": string,"amount_cents": number,"bank_category": string | null,"bill_instance_id": string | null,"category_id": string | null,"created_at": string,"created_by": string | null,"id": string,"import_batch_id": string | null,"import_hash": string | null,"notes": string | null,"original_description": string | null,"payee": string | null,"source": string,"transfer_group_id": string | null,"txn_date": string,"updated_at": string
+                    "account_id": string,"amount_cents": number,"bank_category": string | null,"bill_instance_id": string | null,"category_id": string | null,"created_at": string,"created_by": string | null,"id": string,"import_batch_id": string | null,"import_hash": string | null,"match_dismissed": boolean,"notes": string | null,"original_description": string | null,"payee": string | null,"source": string,"transfer_group_id": string | null,"txn_date": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"amount_cents": number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date": string,"updated_at"?: string
+                    "account_id": string,"amount_cents": number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"match_dismissed"?: boolean,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"amount_cents"?: number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date"?: string,"updated_at"?: string
+                    "account_id"?: string,"amount_cents"?: number,"bank_category"?: string | null,"bill_instance_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"import_batch_id"?: string | null,"import_hash"?: string | null,"match_dismissed"?: boolean,"notes"?: string | null,"original_description"?: string | null,"payee"?: string | null,"source"?: string,"transfer_group_id"?: string | null,"txn_date"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -243,11 +243,23 @@ isOneToOne: false
 "import_transactions":
 { Args: { "p_file_name": string,"p_format": string,"p_rows": Json,"p_statement_total_cents": number | null }; Returns: Json
                            },
+"link_imported_row":
+{ Args: { "p_existing_id": string,"p_imported_id": string }; Returns: undefined
+                           },
 "mark_bill_paid":
 { Args: { "p_account_id": string,"p_amount_cents": number,"p_bill_instance_id": string,"p_category_id"?: string,"p_paid_date": string }; Returns: string
                            },
+"dismiss_match":
+{ Args: { "p_transaction_id": string }; Returns: undefined
+                           },
 "delete_transaction":
 { Args: { "p_transaction_id": string }; Returns: undefined
+                           },
+"mark_paid_from_import":
+{ Args: { "p_bill_instance_id": string,"p_transaction_id": string }; Returns: undefined
+                           },
+"pair_transfer":
+{ Args: { "p_in_id": string,"p_out_id": string }; Returns: undefined
                            },
 "undo_import":
 { Args: { "p_batch_id": string }; Returns: number

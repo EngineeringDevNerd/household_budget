@@ -50,7 +50,8 @@ const MATCH_DAYS = 4
  * Builds the preview: fingerprints every row, then checks the database for
  *  - rows already imported (same fingerprint)                      -> skipped
  *  - a manual entry or marked-paid bill with the same account and
- *    amount within 4 days (probably the same money)                 -> unticked
+ *    amount within 4 days (probably the same money)                 -> noted;
+ *    imported anyway and offered as a match to link afterwards
  *  - rows dated before the account's tracking start date            -> unticked
  */
 export async function buildPreview(
@@ -117,8 +118,8 @@ export async function buildPreview(
       return {
         ...base,
         status: 'possible' as const,
-        note: `Looks like ${t.payee ?? 'an entry'} on ${t.txn_date.slice(5).replace('-', '/')}, already in the app`,
-        include: false,
+        note: `Same as ${t.payee ?? 'an entry'} on ${t.txn_date.slice(5).replace('-', '/')}? You’ll be asked to link them after importing.`,
+        include: true,
       }
     }
     if (account && r.date < account.opening_balance_date) {

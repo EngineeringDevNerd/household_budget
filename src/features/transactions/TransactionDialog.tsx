@@ -86,7 +86,11 @@ export function TransactionDialog({ txn, accounts, categories, defaultAccountId,
     txn?.source === 'bill_payment'
       ? `This also unchecks ${txn.payee ?? 'the bill'} on the bills board.`
       : txn?.transfer_group_id
-        ? 'This also deletes the other side of the transfer.'
+        ? txn.source === 'csv'
+          ? 'The other side of the transfer stays, un-paired.'
+          : 'This also deletes the other side of the transfer.'
+        : txn?.bill_instance_id
+          ? 'The bill it paid goes back to due on the bills board.'
         : 'This can’t be undone.'
 
   return (

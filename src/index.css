@@ -180,3 +180,17 @@ button.link.danger-text { color: var(--danger); }
 .row-buttons.compact { flex: none; gap: 6px; }
 .row-buttons.compact button { padding: 6px 10px; font-size: 0.85rem; }
 .recent-imports { margin-top: 28px; }
+
+/* ---------- Matches ---------- */
+.matches { margin-top: 20px; }
+.matches > p { margin: 0 0 8px; }
+.match { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-top: 1px solid var(--border); }
+.match:first-child { border-top: 0; }
+.match p { margin: 0; }
+.match .row-buttons { align-self: flex-end; margin-top: 4px; }
+.match-title { font-weight: 600; }
+.match-banner {
+  display: block; margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; text-decoration: none;
+  background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--fg); font-size: 0.9rem; font-weight: 600;
+}
+.row-buttons.compact button { white-space: nowrap; }
