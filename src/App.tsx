@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router'
 import { AuthGate } from './features/auth/AuthGate'
 import { AuthProvider } from './features/auth/AuthProvider'
-import { HomePage } from './features/home/HomePage'
+import { BillsBoard } from './features/bills/BillsBoard'
 
 // Hash routing (/#/bills) because GitHub Pages can't rewrite deep links to
 // index.html; a refresh on /household_budget/bills would 404 otherwise.
@@ -11,7 +11,7 @@ export default function App() {
       <AuthGate>
         <HashRouter>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<BillsBoard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>
