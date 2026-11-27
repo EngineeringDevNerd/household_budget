@@ -18,6 +18,9 @@
   --shadow: 0 1px 2px rgba(17, 24, 39, 0.05), 0 8px 24px -12px rgba(17, 24, 39, 0.18);
   --shadow-lift: 0 2px 4px rgba(17, 24, 39, 0.06), 0 18px 40px -18px rgba(17, 24, 39, 0.3);
   --radius: 16px;
+  --hero-from: #3655d6;
+  --hero-to: #5b7cff;
+  --hero-glow: rgba(54, 85, 214, 0.45);
   --tabbar-h: 64px;
   font-family: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
@@ -44,6 +47,9 @@
     --paid: #3ccf8e;
     --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 10px 30px -14px rgba(0, 0, 0, 0.8);
     --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 44px -18px rgba(0, 0, 0, 0.9);
+    --hero-from: #2a3a8f;
+    --hero-to: #1b2459;
+    --hero-glow: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -115,7 +121,69 @@ details[open] .chevron { transform: rotate(90deg); }
   border: 2px solid color-mix(in srgb, var(--muted) 45%, transparent); background: transparent;
   color: var(--accent-ink); font-size: 0.95rem; line-height: 1;
 }
+.check { display: grid; place-items: center; position: relative; transition: background-color 0.2s, border-color 0.2s, transform 0.12s; }
+.check svg { width: 16px; height: 16px; }
+.check path {
+  fill: none; stroke: var(--accent-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 16; stroke-dashoffset: 16;
+}
 .check.checked { background: var(--paid); border-color: var(--paid); }
+.check.checked path { stroke-dashoffset: 0; transition: stroke-dashoffset 0.3s 0.05s ease-out; }
+.check:disabled { opacity: 1; }
+/* A soft ring that spreads out when a bill is just paid. */
+.check.just-checked::after {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--paid);
+  animation: ripple 0.5s ease-out forwards;
+}
+@keyframes ripple { to { transform: scale(1.9); opacity: 0; } }
+/* The paid row folds away before the list reloads. */
+.bill.leaving { animation: fold 0.3s 0.42s ease-in forwards; overflow: hidden; }
+@keyframes fold {
+  from { max-height: 120px; }
+  to { max-height: 0; opacity: 0; transform: scale(0.97); padding-top: 0; padding-bottom: 0; margin-bottom: -8px; }
+}
+
+/* ---------- Payday card ---------- */
+.hero {
+  margin: 0 0 16px; padding: 20px; border-radius: 22px; color: #fff;
+  background: linear-gradient(140deg, var(--hero-from), var(--hero-to));
+  box-shadow: 0 18px 40px -22px var(--hero-glow);
+}
+.hero p { margin: 0; color: inherit; }
+.hero-row { display: flex; align-items: center; gap: 16px; }
+.hero-text { flex: 1; min-width: 0; }
+.hero-label { font-size: 0.85rem; opacity: 0.85; }
+.hero-amount { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin: 2px 0 !important; font-variant-numeric: tabular-nums; }
+.hero-month { margin-top: 14px !important; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.18); font-size: 0.85rem; opacity: 0.9; font-variant-numeric: tabular-nums; }
+.ring { position: relative; flex: none; }
+.ring svg { transform: rotate(-90deg); display: block; }
+.ring circle { fill: none; }
+.ring-track { stroke: rgba(255, 255, 255, 0.22); }
+.ring-value { stroke: #fff; stroke-linecap: round; transition: stroke-dashoffset 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ring-pct { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 0.95rem; }
+
+/* ---------- Loading placeholders ---------- */
+.skeleton { border-radius: var(--radius); background: var(--track); position: relative; overflow: hidden; }
+.skeleton::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--card) 60%, transparent), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; z-index: 25; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom));
+  width: calc(100% - 28px); max-width: 480px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 12px 12px 16px; border-radius: 14px; background: var(--fg); color: var(--bg);
+  font-size: 0.9rem; font-weight: 600; box-shadow: var(--shadow-lift);
+  animation: toast-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 16px); } }
+button.toast-action { background: none; color: inherit; padding: 6px 10px; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Bottom sheet dialogs ---------- */
 .sheet-backdrop {
