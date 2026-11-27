@@ -8,6 +8,8 @@ import { parseCsv } from './csv'
 import { detectFormat, guessFormat, parseRows, type Detected, type Mapping } from './formats'
 import { buildPreview, groupKey, groupLabel, suggestAccount, type PreviewRow } from './preview'
 import { useImportData, type Batch, type ImportData } from './useImportData'
+import { MatchReview } from '../matching/MatchReview'
+import { useMatches } from '../matching/useMatches'
 
 type Loaded = { fileName: string; rows: string[][]; detected: Detected }
 
@@ -16,6 +18,7 @@ type Loaded = { fileName: string; rows: string[][]; detected: Detected }
 // rows you confirm are sent.
 export function ImportPage() {
   const { data, error, reload } = useImportData()
+  const matches = useMatches()
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
@@ -83,11 +86,23 @@ export function ImportPage() {
             setLoaded(null)
             setResult(msg)
             reload()
+            matches.reload()
           }}
         />
       )}
 
-      <RecentImports batches={data.batches} onUndone={reload} />
+      {matches.error && <p className="error">Couldn’t check for matches: {matches.error}</p>}
+      {matches.suggestions && !loaded && (
+        <MatchReview suggestions={matches.suggestions} accounts={matches.accounts} onChanged={matches.reload} />
+      )}
+
+      <RecentImports
+        batches={data.batches}
+        onUndone={() => {
+          reload()
+          matches.reload()
+        }}
+      />
     </main>
   )
 }
@@ -251,7 +266,7 @@ function Preview({
         <>
           <p className="small">
             {visibleRows.length} rows. {counts.duplicate ? `${counts.duplicate} already imported. ` : ''}
-            {counts.possible ? `${counts.possible} look like something already in the app (unticked; tick to add anyway). ` : ''}
+            {counts.possible ? `${counts.possible} look like something already in the app; you’ll confirm those after importing. ` : ''}
             {counts.before_start ? `${counts.before_start} before the start date (unticked).` : ''}
           </p>
           <div className="table-wrap">
