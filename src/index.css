@@ -199,3 +199,4 @@ button.link.danger-text { color: var(--danger); }
 
 /* ---------- Bill edit popup ---------- */
 .scope-buttons { display: flex; flex-direction: column; gap: 10px; }
+.field-help { margin-top: 6px !important; }

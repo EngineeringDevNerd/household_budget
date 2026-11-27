@@ -10,6 +10,7 @@ import { buildPreview, groupKey, groupLabel, suggestAccount, type PreviewRow } f
 import { useImportData, type Batch, type ImportData } from './useImportData'
 import { MatchReview } from '../matching/MatchReview'
 import { useMatches } from '../matching/useMatches'
+import { pickable } from '../../lib/categories'
 
 type Loaded = { fileName: string; rows: string[][]; detected: Detected }
 
@@ -305,7 +306,7 @@ function Preview({
                         onChange={(e) => update(i, { categoryId: e.target.value || null })}
                         aria-label={`Category for ${r.payee}`}
                       >
-                        {data.categories.map((c) => (
+                        {pickable(data.categories, r.categoryId).map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
                           </option>

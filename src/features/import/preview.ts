@@ -67,7 +67,7 @@ export async function buildPreview(
   const withAccount = parsed.map((r) => ({ ...r, accountId: groupAccounts[groupKey(r, d)] }))
   const hashes = await fingerprints(withAccount)
   const categoryId = (name: string) =>
-    categories.find((c) => c.name === name)?.id ?? categories.find((c) => c.name === 'Uncategorized')?.id ?? null
+    categories.find((c) => c.name === name && c.is_active)?.id ?? categories.find((c) => c.name === 'Uncategorized')?.id ?? null
 
   // Already imported?
   const existing = new Set<string>()

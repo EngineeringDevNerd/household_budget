@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { centsToInput, parseDollarsToCents } from '../../lib/money'
 import { formatShortDate, todayISO } from '../../lib/dates'
 import type { Account, Bill, Category } from './useBoard'
+import { pickable } from '../../lib/categories'
 
 type Props = {
   bill: Bill
@@ -83,7 +84,7 @@ export function MarkPaidDialog({ bill, accounts, categories, onClose, onSaved }:
           Category
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">None</option>
-            {categories.map((c) => (
+            {pickable(categories, bill.category_id).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

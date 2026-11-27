@@ -1,4 +1,5 @@
 import type { BillOption, CategoryOption } from './saveRule'
+import { pickable } from '../../lib/categories'
 
 /** The rule's own fields. Used here and by "Always do this" on a transaction. */
 export function RuleFieldsInputs(p: {
@@ -30,7 +31,7 @@ export function RuleFieldsInputs(p: {
           Category
           <select value={p.categoryId} onChange={(e) => p.setCategoryId!(e.target.value)}>
             <option value="">Don’t change</option>
-            {p.categories.map((c) => (
+            {pickable(p.categories, p.categoryId).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

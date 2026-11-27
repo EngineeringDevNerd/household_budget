@@ -18,7 +18,7 @@ export type Txn = Pick<
   | 'original_description'
 >
 export type AccountBalance = Tables<'account_balances'>
-export type TxnCategory = Pick<Tables<'categories'>, 'id' | 'name' | 'kind'>
+export type TxnCategory = Pick<Tables<'categories'>, 'id' | 'name' | 'kind' | 'is_active'>
 
 export type TransactionsData = {
   month: string
@@ -46,7 +46,7 @@ export function useTransactions(month: string) {
           .order('txn_date', { ascending: false })
           .order('created_at', { ascending: false }),
         supabase.from('account_balances').select('*').order('sort_order').order('name'),
-        supabase.from('categories').select('id, name, kind').eq('is_active', true).order('name'),
+        supabase.from('categories').select('id, name, kind, is_active').order('name'),
       ])
       for (const r of [txns, accounts, categories]) if (r.error) throw r.error
       setData({

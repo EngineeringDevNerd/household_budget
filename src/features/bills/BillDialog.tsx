@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { centsToInput, parseDollarsToCents } from '../../lib/money'
 import { addMonths, formatMonth, formatShortDate, monthStart } from '../../lib/dates'
 import type { Account, Bill, Category, PaySchedule } from './useBoard'
+import { pickable } from '../../lib/categories'
 
 type Props = {
   /** The bill you tapped. Leave it out to add a new bill. */
@@ -269,7 +270,7 @@ export function BillDialog({ bill, today, accounts, categories, paySchedules, on
               Category
               <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">None</option>
-                {categories.map((c) => (
+                {pickable(categories, bill?.category_id).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
