@@ -210,7 +210,14 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "account_balances": {
+                  Row: {
+                    "balance_cents": number,"id": string,"is_active": boolean,"name": string,"opening_balance_cents": number,"opening_balance_date": string,"sort_order": number,"type": string
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
           }
           Functions: {
             "generate_month":
@@ -221,6 +228,9 @@ isOneToOne: false
                            },
 "mark_bill_paid":
 { Args: { "p_account_id": string,"p_amount_cents": number,"p_bill_instance_id": string,"p_category_id"?: string,"p_paid_date": string }; Returns: string
+                           },
+"delete_transaction":
+{ Args: { "p_transaction_id": string }; Returns: undefined
                            },
 "unmark_bill_paid":
 { Args: { "p_bill_instance_id": string }; Returns: undefined
