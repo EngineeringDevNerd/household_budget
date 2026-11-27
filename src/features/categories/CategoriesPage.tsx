@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { TopBar } from '../../components/TopBar'
+import { CategoryDot } from '../../components/CategoryDot'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../types/database'
 
@@ -107,7 +108,10 @@ export function CategoriesPage() {
     <li key={c.id} className="bill">
       <button className="txn-open" onClick={() => (setMessage(null), setEditing(c))} aria-label={`Edit ${c.name}`}>
         <span className="bill-main">
-          <span className="bill-name">{c.name}</span>
+          <span className="bill-name">
+            <CategoryDot id={c.id} />
+            {c.name}
+          </span>
           <span className="muted small">
             {!c.is_active && `${KINDS.find((k) => k.kind === c.kind)?.label} · `}
             {usageText(data.usage.get(c.id))}

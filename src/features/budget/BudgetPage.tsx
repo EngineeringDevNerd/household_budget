@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { TopBar } from '../../components/TopBar'
+import { CategoryDot } from '../../components/CategoryDot'
 import { supabase } from '../../lib/supabase'
 import { addMonths, formatMonth, monthEnd, monthStart, todayISO } from '../../lib/dates'
 import { centsToInput, formatCents, parseDollarsToCents } from '../../lib/money'
@@ -246,6 +247,7 @@ function BudgetRow({ line, month, onOpen }: { line: Line; month: string; onOpen:
       <span className="budget-top">
         <span className="bill-main">
           <span className="bill-name">
+            {editable && <CategoryDot id={line.category_id} />}
             {line.name}
             {!line.is_active && <span className="muted small"> (hidden)</span>}
           </span>

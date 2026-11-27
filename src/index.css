@@ -327,3 +327,14 @@ button.link.danger-text { color: var(--danger); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Category colors ---------- */
+.cat-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--cat); margin-right: 8px; vertical-align: 0.1em;
+}
+.cat-tag {
+  display: inline-block; padding: 0 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; line-height: 1.6;
+  color: color-mix(in srgb, var(--cat) 78%, var(--fg)); background: color-mix(in srgb, var(--cat) 15%, transparent);
+  vertical-align: 0.05em; white-space: nowrap;
+}
