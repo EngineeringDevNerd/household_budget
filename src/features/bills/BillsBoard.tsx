@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { addDays, daysBetween, formatMonth, formatMonthDay, formatShortDate, monthStart } from '../../lib/dates'
 import { formatCents } from '../../lib/money'
 import { TopBar } from '../../components/TopBar'
+import { ProgressRing } from '../../components/ProgressRing'
+import { Toast, type ToastState } from '../../components/Toast'
+import { useCountUp } from '../../lib/useCountUp'
+import { supabase } from '../../lib/supabase'
 import { MarkPaidDialog } from './MarkPaidDialog'
 import { UnmarkDialog } from './UnmarkDialog'
 import { BillDialog } from './BillDialog'
@@ -15,6 +19,12 @@ export function BillsBoard() {
   const [unpaying, setUnpaying] = useState<Bill | null>(null)
   const [editing, setEditing] = useState<Bill | null>(null)
   const [adding, setAdding] = useState(false)
+  // A bill that was just marked paid stays in place for a moment so its
+  // check mark can draw and the row can fold away before the list reloads.
+  const [justPaid, setJustPaid] = useState<string | null>(null)
+  const [toast, setToast] = useState<ToastState | null>(null)
+  const hideToast = useCallback(() => setToast(null), [])
+  const toastId = useRef(0)
 
   const header = <TopBar title="Bills" />
 
@@ -29,9 +39,14 @@ export function BillsBoard() {
   }
   if (!data) {
     return (
-      <main className="page">
+      <main className="page" aria-busy="true">
         {header}
-        <p className="muted">Loading…</p>
+        <div className="skeleton" style={{ height: 132, marginBottom: 16 }} />
+        <div className="skeleton" style={{ height: 48, marginBottom: 20 }} />
+        <div className="skeleton" style={{ height: 14, width: '35%', marginBottom: 10 }} />
+        <div className="skeleton" style={{ height: 68, marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 68, marginBottom: 8 }} />
+        <span className="visually-hidden">Loading your bills</span>
       </main>
     )
   }
@@ -56,7 +71,26 @@ export function BillsBoard() {
   const monthBills = bills.filter((b) => b.bill_month === thisMonth && !transferCats.has(b.category_id ?? ''))
   const monthPaid = monthBills.filter((b) => b.status === 'paid')
   const monthTotal = sum(monthBills)
-  const paidPct = monthTotal ? Math.round((sum(monthPaid) / monthTotal) * 100) : 0
+  const paidPct = monthTotal ? (sum(monthPaid) / monthTotal) * 100 : 0
+
+  const paid = (bill: Bill) => {
+    setPaying(null)
+    setJustPaid(bill.id)
+    setToast({ id: ++toastId.current, message: `${bill.name} marked paid`, actionLabel: 'Undo', onAction: () => undo(bill) })
+    setTimeout(async () => {
+      await reload()
+      setJustPaid(null)
+    }, 750)
+  }
+
+  // Undo removes the payment the app just recorded, the same as
+  // "Mark not paid" but without the confirm step.
+  const undo = async (bill: Bill) => {
+    if (!supabase) return
+    const { error: rpcError } = await supabase.rpc('unmark_bill_paid', { p_bill_instance_id: bill.id })
+    if (rpcError) setToast({ id: ++toastId.current, message: `Couldn’t undo: ${rpcError.message}` })
+    reload()
+  }
 
   const done = () => {
     setPaying(null)
@@ -70,46 +104,29 @@ export function BillsBoard() {
     <main className="page">
       {header}
 
-      <section className="card summary" aria-label="Payday summary">
-        {nextPayday ? (
-          <>
-            <p className="big">
-              {daysToPayday === 1 ? 'Payday tomorrow' : `Payday in ${daysToPayday} days`}
-            </p>
-            <p className="muted">
-              {formatShortDate(nextPayday)} · {formatCents(leftBeforePayday ?? 0)} left to pay before then
-            </p>
-          </>
-        ) : (
-          <p className="muted">No upcoming payday yet. It appears once your pay schedule is set up.</p>
-        )}
-        {monthBills.length > 0 && (
-          <div className="month">
-            <div className="month-line">
-              <span>{formatMonth(thisMonth)}</span>
-              <span>
-                {formatCents(sum(monthPaid))} of {formatCents(monthTotal)} paid
-              </span>
-            </div>
-            <div className="bar" role="progressbar" aria-valuenow={paidPct} aria-valuemin={0} aria-valuemax={100}>
-              <div style={{ width: `${paidPct}%` }} />
-            </div>
-          </div>
-        )}
-      </section>
+      <PaydayCard
+        nextPayday={nextPayday}
+        daysToPayday={daysToPayday}
+        leftBeforePayday={leftBeforePayday ?? 0}
+        monthLabel={formatMonth(thisMonth)}
+        monthPaid={sum(monthPaid)}
+        monthTotal={monthTotal}
+        hasMonthBills={monthBills.length > 0}
+        paidPct={paidPct}
+      />
 
-      <button className="add-txn" onClick={() => setAdding(true)}>
+      <button className="add-txn secondary" onClick={() => setAdding(true)}>
         + Add bill
       </button>
 
       {bills.length === 0 && <p className="muted">No bills yet. Add one with the button above.</p>}
 
-      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} />
-      <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} />
-      <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} />
-      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} />
-      <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} collapsed />
-      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} onEdit={setEditing} collapsed />
+      <Section title="Overdue" tone="danger" bills={overdue} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
+      <Section title="Due today" bills={dueToday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
+      <Section title="This week" bills={thisWeek} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
+      <Section title="Until next payday" bills={untilPayday} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} />
+      <Section title="Later" bills={later} onCheck={setPaying} onEdit={setEditing} justPaid={justPaid} collapsed />
+      <Section title="Paid this month" bills={monthPaid} onCheck={setUnpaying} onEdit={setEditing} justPaid={justPaid} collapsed />
 
       {paying && (
         <MarkPaidDialog
@@ -117,7 +134,7 @@ export function BillsBoard() {
           accounts={data.accounts}
           categories={data.categories}
           onClose={() => setPaying(null)}
-          onSaved={done}
+          onSaved={() => paid(paying)}
         />
       )}
       {(editing || adding) && (
@@ -132,6 +149,7 @@ export function BillsBoard() {
         />
       )}
       {unpaying && <UnmarkDialog bill={unpaying} onClose={() => setUnpaying(null)} onSaved={done} />}
+      <Toast toast={toast} onDone={hideToast} />
     </main>
   )
 }
@@ -143,9 +161,10 @@ type SectionProps = {
   onEdit: (b: Bill) => void
   tone?: 'danger'
   collapsed?: boolean
+  justPaid: string | null
 }
 
-function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProps) {
+function Section({ title, bills, onCheck, onEdit, tone, collapsed, justPaid }: SectionProps) {
   if (bills.length === 0) return null
   const heading = (
     <span className="section-title">
@@ -159,7 +178,7 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProp
   const list = (
     <ul className="bills cards">
       {bills.map((b) => (
-        <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} />
+        <BillRow key={b.id} bill={b} onCheck={onCheck} onEdit={onEdit} leaving={b.id === justPaid} />
       ))}
     </ul>
   )
@@ -176,16 +195,21 @@ function Section({ title, bills, onCheck, onEdit, tone, collapsed }: SectionProp
   )
 }
 
-function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => void; onEdit: (b: Bill) => void }) {
-  const paid = bill.status === 'paid'
+type RowProps = { bill: Bill; onCheck: (b: Bill) => void; onEdit: (b: Bill) => void; leaving: boolean }
+
+function BillRow({ bill, onCheck, onEdit, leaving }: RowProps) {
+  const paid = bill.status === 'paid' || leaving
   return (
-    <li className={paid ? 'bill paid' : 'bill'}>
+    <li className={['bill', paid && 'paid', leaving && 'leaving'].filter(Boolean).join(' ')}>
       <button
-        className={paid ? 'check checked' : 'check'}
+        className={['check', paid && 'checked', leaving && 'just-checked'].filter(Boolean).join(' ')}
         onClick={() => onCheck(bill)}
+        disabled={leaving}
         aria-label={paid ? `Mark ${bill.name} as not paid` : `Mark ${bill.name} paid`}
       >
-        {paid ? '✓' : ''}
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3.5 8.5l3 3 6-7" />
+        </svg>
       </button>
       {/* Tapping anywhere but the check opens the edit popup. */}
       <button className="txn-open" onClick={() => onEdit(bill)} aria-label={`Edit ${bill.name}`}>
@@ -199,5 +223,49 @@ function BillRow({ bill, onCheck, onEdit }: { bill: Bill; onCheck: (b: Bill) => 
         <span className="bill-amount">{formatCents(bill.amount_cents)}</span>
       </button>
     </li>
+  )
+}
+
+type PaydayCardProps = {
+  nextPayday: string | null
+  daysToPayday: number | null
+  leftBeforePayday: number
+  monthLabel: string
+  monthPaid: number
+  monthTotal: number
+  hasMonthBills: boolean
+  paidPct: number
+}
+
+// The blue card at the top: money still due before payday, and a ring
+// showing how much of this month's bills are paid.
+function PaydayCard(p: PaydayCardProps) {
+  const left = useCountUp(p.leftBeforePayday)
+  const monthPaid = useCountUp(p.monthPaid)
+  return (
+    <section className="hero" aria-label="Payday summary">
+      <div className="hero-row">
+        <div className="hero-text">
+          {p.nextPayday ? (
+            <>
+              <p className="hero-label">
+                {p.daysToPayday === 1 ? 'Payday tomorrow' : `Payday in ${p.daysToPayday} days`} ·{' '}
+                {formatShortDate(p.nextPayday)}
+              </p>
+              <p className="hero-amount">{formatCents(left)}</p>
+              <p className="hero-label">left to pay before then</p>
+            </>
+          ) : (
+            <p className="hero-label">No upcoming payday yet. It appears once your pay schedule is set up.</p>
+          )}
+        </div>
+        {p.hasMonthBills && <ProgressRing pct={p.paidPct} label={`${Math.round(p.paidPct)}% of ${p.monthLabel} bills paid`} />}
+      </div>
+      {p.hasMonthBills && (
+        <p className="hero-month">
+          {p.monthLabel} · {formatCents(monthPaid)} of {formatCents(p.monthTotal)} paid
+        </p>
+      )}
+    </section>
   )
 }
